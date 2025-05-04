@@ -58,27 +58,30 @@ Ejercicio
 
 2. De acuerdo con lo anterior, y con la lógica del juego, identifique y escriba claramente (archivo RESPUESTAS.txt):
     - Posibles condiciones de carrera.
+      Acceso concurrente a estructuras compartidas como _static Cell[ ] food, static Cell[ ] barriers, static Cell[ ] jump_pads, static Cell[ ] turbo_boosts, static Cell[ ][ ] gameboard_.
     - Uso inadecuado de colecciones, considerando su manejo concurrente (para esto, aumente la velocidad del juego y ejecútelo varias veces hasta que se genere un error).
-	![imagen](https://github.com/user-attachments/assets/489bc502-4d1b-44c2-9df3-8a5981947dc7)
-      	![imagen](https://github.com/user-attachments/assets/b8facc64-21db-4c56-b022-41d32937c85b)
-
-    - Uso innecesario de esperas activas.
-
-2. Identifique las regiones críticas asociadas a las condiciones de carrera, y haga algo para eliminarlas. Tenga en cuenta que se debe sincronizar estríctamente LO NECESARIO. En su documento de respuestas indique, la solución realizada para cada ítem del punto 2. Igualmente tenga en cuenta que en los siguientes puntos NO se deben agregar más posibles condiciones de carrera.
-
-  - Acceso concurrente a estructuras compartidas como _static Cell[] food, static Cell[] barriers, static Cell[] jump_pads, static Cell[] turbo_boosts, static Cell[][] gameboard_.
-  - Particularmente, este bloque es crítico:
+      Particularmente, este bloque es crítico:
 
 	```
-  		for (int i = 0; i != SnakeApp.MAX_THREADS; i++) {
-    			for (Cell p : SnakeApp.getApp().snakes[i].getBody()) {
+  		for (int i = 0; i != SnakeApp.MAX_THREADS; i++)
+  		{
+    			for (Cell p : SnakeApp.getApp().snakes[i].getBody())
+  			{
         
  			}
 		}
   	```
 	ya que LinkedList(Cell) puede retornar una estructura que no es segura para acceso concurrente. Además, una serpuente que actualiza su cuerpo mientras el tablero está pintando puede presentar 			`ConcurrentModificationException`
+  - Podría haber riesgo si dos hilos leen o modifican estructuras como `gameboard[x][y]` sin sincronización.
+	![imagen](https://github.com/user-attachments/assets/489bc502-4d1b-44c2-9df3-8a5981947dc7)
+      	![imagen](https://github.com/user-attachments/assets/b8facc64-21db-4c56-b022-41d32937c85b)
 
-  - 
+    - Uso innecesario de esperas activas.
+      Si se realizan muchos `updates` en el `repaint()`, podria generar uso de recurso de CPU innecesario. Igualmente, al aumentar la velocidad pueden ocurrir errores relacionados a la lentitud del juego 		        `Thread.sleep()` y, generar errores como `ConcurrentModificationException`.
+      
+2. Identifique las regiones críticas asociadas a las condiciones de carrera, y haga algo para eliminarlas. Tenga en cuenta que se debe sincronizar estríctamente LO NECESARIO. En su documento de respuestas indique, la solución realizada para cada ítem del punto 2. Igualmente tenga en cuenta que en los siguientes puntos NO se deben agregar más posibles condiciones de carrera.
+
+
 
 3. Como se puede observar, el juego está incompleto. Haga los ajustes necesarios para que a través de botones en la interfaz se pueda Iniciar/Pausar/Reanudar el juego: iniciar el juego no se ha iniciado aún, suspender el juego si está en ejecución, reactivar el juego si está suspendido. Para esto tenga en cuenta:
     * Al pausar (suspender) el juego, en alguna parte de la interfaz (agregue los componentes que desee) se debe mostrar:
