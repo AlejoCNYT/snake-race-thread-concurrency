@@ -57,6 +57,9 @@ Ejercicio
 2. De acuerdo con lo anterior, y con la lógica del juego, identifique y escriba claramente (archivo RESPUESTAS.txt):
     - Posibles condiciones de carrera.
     - Uso inadecuado de colecciones, considerando su manejo concurrente (para esto, aumente la velocidad del juego y ejecútelo varias veces hasta que se genere un error).
+	![imagen](https://github.com/user-attachments/assets/489bc502-4d1b-44c2-9df3-8a5981947dc7)
+      	![imagen](https://github.com/user-attachments/assets/b8facc64-21db-4c56-b022-41d32937c85b)
+
     - Uso innecesario de esperas activas.
 
 2. Identifique las regiones críticas asociadas a las condiciones de carrera, y haga algo para eliminarlas. Tenga en cuenta que se debe sincronizar estríctamente LO NECESARIO. En su documento de respuestas indique, la solución realizada para cada ítem del punto 2. Igualmente tenga en cuenta que en los siguientes puntos NO se deben agregar más posibles condiciones de carrera.
