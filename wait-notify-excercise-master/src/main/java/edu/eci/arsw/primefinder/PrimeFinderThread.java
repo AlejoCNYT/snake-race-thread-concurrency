@@ -1,18 +1,19 @@
 package edu.eci.arsw.primefinder;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
 
 public class PrimeFinderThread extends Thread {
 
     int a, b;
-    private List<Integer> primes = new ArrayList<>();
-    private final Object pauseLock;
-    private final PausableControl control;
+    List<Integer> primes = new ArrayList<>();
+    private final Object lock;
+    private final Control control;
 
-    public PrimeFinderThread(int a, int b, Object pauseLock, PausableControl control) {
+    public PrimeFinderThread(int a, int b, Object lock, Control control) {
         this.a = a;
         this.b = b;
-        this.pauseLock = pauseLock;
+        this.lock = lock;
         this.control = control;
     }
 
@@ -20,18 +21,18 @@ public class PrimeFinderThread extends Thread {
         return primes;
     }
 
+    @Override
     public void run() {
         for (int i = a; i < b; i++) {
-            synchronized (pauseLock) {
+            synchronized (lock) {
                 while (control.isPaused()) {
                     try {
-                        pauseLock.wait();
+                        lock.wait();
                     } catch (InterruptedException e) {
                         return;
                     }
                 }
             }
-
             if (isPrime(i)) {
                 primes.add(i);
             }
