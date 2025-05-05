@@ -1,0 +1,25 @@
+Archivo: RESPUESTAS.txt
+
+1. Posibles Condiciones de Carrera:
+
+- Acceso concurrente a celdas del tablero (Cell): Aunque el método freeCell() es synchronized, otros métodos como setFull(boolean) y setFood(boolean) no están sincronizados.
+  Esto puede causar que múltiples hilos (serpientes) accedan y modifiquen una celda al mismo tiempo, produciendo inconsistencias.
+
+- Movimiento de serpientes: Si dos serpientes intentan moverse a la misma celda al mismo tiempo, y no hay sincronización adecuada,
+  ambas podrían creer que ocuparon la misma celda, generando colisiones incorrectas.
+
+2. Uso Inadecuado de Colecciones:
+
+- Listas de celdas ocupadas por serpientes: Si se usa una List<Cell> para representar el cuerpo de una serpiente sin sincronización,
+  puede haber errores al agregar o eliminar celdas desde múltiples hilos.
+
+- Control de power-ups o comida: Si hay colecciones compartidas de elementos del juego sin protección, varios hilos pueden acceder
+  y modificarlas simultáneamente, provocando inconsistencias (por ejemplo, dos serpientes recogiendo el mismo power-up).
+
+3. Uso Innecesario de Esperas Activas:
+
+- Si las serpientes esperan a que una celda se libere usando ciclos while(!cell.isFree()) {} en lugar de usar wait()/notify(),
+  se genera espera activa (busy waiting), lo cual consume CPU innecesariamente.
+
+- Aunque se usa notifyAll() en freeCell(), no hay evidencia de que los hilos realmente hagan wait() de forma eficiente, lo que sugiere
+  que pueden estar usando esperas activas en otras partes del código.
