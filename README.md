@@ -58,7 +58,7 @@ Ejercicio
 
 2. De acuerdo con lo anterior, y con la lógica del juego, identifique y escriba claramente (archivo RESPUESTAS.txt):
     - Posibles condiciones de carrera.
-      Acceso concurrente a estructuras compartidas como _static Cell[ ] food, static Cell[ ] barriers, static Cell[ ] jump_pads, static Cell[ ] turbo_boosts, static Cell[ ][ ] gameboard_.
+      Acceso concurrente a estructuras compartidas como _static Cell[ ] food, static Cell[ ] barriers, static Cell[ ] jump_pads, static Cell[ ] turbo_boosts, static Cell[ ][ ] gameboard_. Las inconsistencias pueden 		generarse debido a que algunos métodos compartidos de _cell()_ no están sincronized, acualmente (de hecho, el único método que sí está siendo sincronized actualmente es el de _freeCell()_). De la misma manera, 	la clase _Snake_ tampoco está manejando posibles fallos que reflejen la posición de las serpientes. 
     - Uso inadecuado de colecciones, considerando su manejo concurrente (para esto, aumente la velocidad del juego y ejecútelo varias veces hasta que se genere un error).
       Particularmente, este bloque es crítico:
 
@@ -71,13 +71,14 @@ Ejercicio
  			}
 		}
   	```
-	ya que LinkedList(Cell) puede retornar una estructura que no es segura para acceso concurrente. Además, una serpuente que actualiza su cuerpo mientras el tablero está pintando puede presentar 			`ConcurrentModificationException`
+	ya que LinkedList(Cell) puede retornar una estructura que no es segura para acceso concurrente. Además, una serpiente que actualiza su cuerpo mientras el tablero está pintando puede presentar 			`ConcurrentModificationException`. Dicho de otra manera, la sincronización o `CopyOnWriteArrayList` debería ser utilizado para no se accedidos inadecuadamente y reflejar errores en el _body_ de las _snakes_. 	De otra parte, múltiples _snakes_ podrían querer acceder a un mismo recurso y, si éstas no pueden ser accedidas concurrentemente, múltiples hilos podrían adquirir los beneficios de un mismo _power-up_.
+
   - Podría haber riesgo si dos hilos leen o modifican estructuras como `gameboard[x][y]` sin sincronización.
 	![imagen](https://github.com/user-attachments/assets/489bc502-4d1b-44c2-9df3-8a5981947dc7)
       	![imagen](https://github.com/user-attachments/assets/b8facc64-21db-4c56-b022-41d32937c85b)
 
     - Uso innecesario de esperas activas.
-      Si se realizan muchos `updates` en el `repaint()`, podria generar uso de recurso de CPU innecesario. Igualmente, al aumentar la velocidad pueden ocurrir errores relacionados a la lentitud del juego 		        `Thread.sleep()` y, generar errores como `ConcurrentModificationException`.
+      Si se realizan muchos `updates` en el `repaint()`, podria generar uso de recurso de CPU innecesario. Igualmente, al aumentar la velocidad pueden ocurrir errores relacionados a la lentitud del juego 		        `Thread.sleep()` y, generar errores como `ConcurrentModificationException`. También, en caso que las serpientes tengan una espera activa por la liberación de cada celda (`while(!cell.isFree()) {}`), genera 		_busy-waiting_. Además, el método `freeCell()` utiliza una notificación a todos lo hilos sin que se complemente con la contraparte de _wait_, lo que lo convierte en un mecanismo ineficiente.
       
 3. Identifique las regiones críticas asociadas a las condiciones de carrera, y haga algo para eliminarlas. Tenga en cuenta que se debe sincronizar estríctamente LO NECESARIO. En su documento de respuestas indique, la solución realizada para cada ítem del punto 2. Igualmente tenga en cuenta que en los siguientes puntos NO se deben agregar más posibles condiciones de carrera.
 
