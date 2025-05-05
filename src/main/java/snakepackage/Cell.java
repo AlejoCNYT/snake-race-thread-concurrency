@@ -11,7 +11,8 @@ package snakepackage;
  * @author Joao Andrade 28445
  * @author Diana Pereira 38074
  */
-public class Cell {
+public class Cell
+{
 
 	/** X - Coordenada X da celula */
 	private int x;
@@ -40,7 +41,8 @@ public class Cell {
 	 *
 	 * @return true, se tem turbo_boost
 	 */
-	public boolean isTurbo_boost() {
+	public synchronized boolean isTurbo_boost()
+	{
 		return turbo_boost;
 	}
 
@@ -49,7 +51,8 @@ public class Cell {
 	 *
 	 * @param turbo_boost � novo turbo-boost
 	 */
-	public void setTurbo_boost(boolean turbo_boost) {
+	public synchronized void setTurbo_boost(boolean turbo_boost)
+	{
 		this.turbo_boost = turbo_boost;
 	}
 
@@ -58,7 +61,7 @@ public class Cell {
 	 *
 	 * @return true, se tem comida
 	 */
-	public boolean isFood() {
+	public synchronized boolean isFood() {
 		return food;
 	}
 
@@ -67,7 +70,7 @@ public class Cell {
 	 *
 	 * @param food � a nova comida
 	 */
-	public void setFood(boolean food) {
+	public synchronized void setFood(boolean food) {
 		this.food = food;
 	}
 
@@ -76,7 +79,7 @@ public class Cell {
 	 *
 	 * @return true, se tem salto-ao-eixo
 	 */
-	public boolean isJump_pad() {
+	public synchronized boolean isJump_pad() {
 		return jump_pad;
 	}
 
@@ -85,7 +88,7 @@ public class Cell {
 	 *
 	 * @param jump_pad � o novo salto-ao-eixo
 	 */
-	public void setJump_pad(boolean jump_pad) {
+	public synchronized void setJump_pad(boolean jump_pad) {
 		this.jump_pad = jump_pad;
 	}
 
@@ -132,7 +135,7 @@ public class Cell {
 	 *
 	 * @param y - y
 	 */
-	public void setY(int y) {
+	public  void setY(int y) {
 		this.y = y;
 	}
 
@@ -141,7 +144,7 @@ public class Cell {
 	 *
 	 * @return true, se estiver full
 	 */
-	public boolean isFull() {
+	public synchronized boolean isFull() {
 		return full;
 	}
 
@@ -150,7 +153,7 @@ public class Cell {
 	 *
 	 * @param full
 	 */
-	public void setFull(boolean full) {
+	public synchronized void setFull(boolean full) {
 		this.full = full;
 	}
 
@@ -176,7 +179,7 @@ public class Cell {
 	 *
 	 * @return true, 
 	 */
-	public boolean hasElements() {
+	public synchronized boolean hasElements() {
 		if (this.full == true ||  this.food == true
 				|| this.jump_pad == true) {
 			return true;
@@ -184,11 +187,11 @@ public class Cell {
 		return false;
 	}
 
-	public boolean isBarrier() {
+	public synchronized boolean isBarrier() {
 		return barrier;
 	}
 
-	public void setBarrier(boolean barrier) {
+	public synchronized void setBarrier(boolean barrier) {
 		this.barrier = barrier;
 	}
 

@@ -15,7 +15,8 @@ import javax.swing.JLabel;
 import enums.GridSize;
 import java.io.InputStream;
 
-public class Board extends JLabel implements Observer {
+public class Board extends JLabel implements Observer
+		{
 
 	private static final long serialVersionUID = 1L;
 	public static final int NR_BARRIERS = 5;
@@ -29,6 +30,7 @@ public class Board extends JLabel implements Observer {
 	static int[] result = new int[SnakeApp.MAX_THREADS];
 	Random random = new Random();
 	static Cell[][] gameboard = new Cell[GridSize.GRID_WIDTH][GridSize.GRID_HEIGHT];
+
 
 	@SuppressWarnings("unused")
 	public Board() {
