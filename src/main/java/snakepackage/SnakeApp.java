@@ -8,10 +8,13 @@ import javax.swing.JFrame;
 import enums.GridSize;
 import java.awt.BorderLayout;
 import java.awt.FlowLayout;
+import java.util.LinkedList;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.swing.JButton;
 import javax.swing.JPanel;
+
+import static snakepackage.Board.result;
 
 /**
  * @author jd-
@@ -19,10 +22,11 @@ import javax.swing.JPanel;
  */
 public class SnakeApp
 {
-
+    private static final Object gameStateLock = new Object();
+    private static final Object snakesLock = new Object();
     private static SnakeApp app;
-    public static final int MAX_THREADS = 4;
-    Snake[] snakes = new Snake[MAX_THREADS];
+    public static final int MAX_THREADS = 8;
+    static Snake[] snakes = new Snake[MAX_THREADS];
     private static final Cell[] spawn =
             {
         new Cell(1, (GridSize.GRID_HEIGHT / 2) / 2),
@@ -62,6 +66,8 @@ public class SnakeApp
         frame.add(actionsBPabel,BorderLayout.SOUTH);
 
     }
+
+
 
     public static void main(String[] args)
     {
@@ -107,9 +113,96 @@ public class SnakeApp
 
     }
 
+    public static boolean checkGameOver() {
+        synchronized(gameStateLock) {
+            // 1. Verificar si todas las serpientes han terminado
+            boolean allDead = true;
+            for(Snake snake : snakes) {
+                if(snake != null && !snake.isSnakeEnd()) {
+                    allDead = false;
+                    break;
+                }
+            }
+            if(allDead) return true;
+
+            // 2. Verificar colisiones entre serpientes
+            for(int i = 0; i < snakes.length; i++) {
+                if(snakes[i] == null || snakes[i].isSnakeEnd()) continue;
+
+                Cell head = snakes[i].getHead();
+                if(head == null) continue;
+
+                // 2.1. Colisión con otras serpientes
+                for(int j = 0; j < snakes.length; j++) {
+                    if(i == j || snakes[j] == null) continue;
+
+                    LinkedList<Cell> body = snakes[j].getBody();
+                    for(Cell cell : body) {
+                        if(cell != null && cell.equals(head)) {
+                            // Colisión con cuerpo de otra serpiente
+                            snakes[i].setSnakeEnd(true);
+                            if(i != j && !snakes[j].getHead().equals(head)) {
+                                // Solo cuenta como muerte si no es colisión de cabezas
+                                result[i] = body.size(); // Guardar puntuación
+                            }
+                        }
+                    }
+                }
+
+                // 2.2. Colisión con bordes
+                if(head.getX() < 0 || head.getX() >= GridSize.GRID_WIDTH ||
+                        head.getY() < 0 || head.getY() >= GridSize.GRID_HEIGHT) {
+                    snakes[i].setSnakeEnd(true);
+                    result[i] = snakes[i].getBody().size();
+                }
+
+                // 2.3. Colisión con barreras
+                synchronized(Board.barriersLock) {
+                    for(Cell barrier : Board.barriers) {
+                        if(barrier != null && barrier.equals(head)) {
+                            snakes[i].setSnakeEnd(true);
+                            result[i] = snakes[i].getBody().size();
+                        }
+                    }
+                }
+            }
+
+            // 3. Verificar si queda solo una serpiente viva
+            int aliveCount = 0;
+            Snake lastAlive = null;
+            for(Snake snake : snakes) {
+                if(snake != null && !snake.isSnakeEnd()) {
+                    aliveCount++;
+                    lastAlive = snake;
+                }
+            }
+
+            if(aliveCount <= 1) {
+                if(lastAlive != null) {
+                    result[lastAlive.getIdt() - 1] = lastAlive.getBody().size() * 2; // Bonus por ganar
+                }
+                return true;
+            }
+
+            return false;
+        }
+    }
+
     public static SnakeApp getApp()
     {
         return app;
+    }
+
+    public static Snake getSnake(int id) {
+        synchronized(snakesLock) {
+            return snakes[id];
+        }
+    }
+
+    public static void updateSnakeStatus(int id, boolean status) {
+        synchronized(snakesLock) {
+            snakes[id].setSnakeEnd(status);
+        }
     }
 
 }
