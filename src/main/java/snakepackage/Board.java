@@ -5,9 +5,7 @@ import java.awt.Graphics;
 import java.awt.Image;
 import java.io.IOException;
 import java.net.URL;
-import java.util.Observable;
-import java.util.Observer;
-import java.util.Random;
+import java.util.*;
 
 import javax.imageio.ImageIO;
 import javax.swing.JLabel;
@@ -17,7 +15,7 @@ import java.io.InputStream;
 
 public class Board extends JLabel implements Observer
 		{
-
+	public static final Object collisionLock = new Object();
 	private static final long serialVersionUID = 1L;
 	public static final int NR_BARRIERS = 5;
 	public static final int NR_JUMP_PADS = 2;
@@ -30,7 +28,10 @@ public class Board extends JLabel implements Observer
 	static int[] result = new int[SnakeApp.MAX_THREADS];
 	Random random = new Random();
 	static Cell[][] gameboard = new Cell[GridSize.GRID_WIDTH][GridSize.GRID_HEIGHT];
-
+	private static final Object foodLock = new Object();
+	static final Object barriersLock = new Object();
+	private static final Object jumpPadsLock = new Object();
+	private static final Object turboBoostsLock = new Object();
 
 	@SuppressWarnings("unused")
 	public Board() {
@@ -223,8 +224,160 @@ public class Board extends JLabel implements Observer
 
 	}
 
+	public static void removeFood(Cell foodCell) {
+		synchronized(foodLock) {
+			for(int i=0; i<NR_FOOD; i++) {
+				if(food[i].equals(foodCell)) {
+					food[i] = null;
+					break;
+				}
+			}
+		}
+	}
+
+	public static void removeBarrier(Cell barrierCell) {
+		synchronized(barriersLock) {
+			for(int i = 0; i < NR_BARRIERS; i++) {
+				if(barriers[i] != null && barriers[i].equals(barrierCell)) {
+					barriers[i] = null;
+					break;
+				}
+			}
+		}
+	}
+
+	public static boolean containsBarrier(Cell cell) {
+		synchronized(barriersLock) {
+			for(int i = 0; i < NR_BARRIERS; i++) {
+				if(barriers[i] != null && barriers[i].equals(cell)) {
+					return true;
+				}
+			}
+			return false;
+		}
+	}
+
+	public static void removeJumpPad(Cell jumpPadCell) {
+		synchronized(jumpPadsLock) {
+			for(int i = 0; i < NR_JUMP_PADS; i++) {
+				if(jump_pads[i] != null && jump_pads[i].equals(jumpPadCell)) {
+					jump_pads[i] = null;
+					break;
+				}
+			}
+		}
+	}
+
+	public static Cell getAvailableJumpPad() {
+		synchronized(jumpPadsLock) {
+			for(int i = 0; i < NR_JUMP_PADS; i++) {
+				if(jump_pads[i] != null) {
+					return jump_pads[i];
+				}
+			}
+			return null;
+		}
+	}
+
+	public static void removeTurboBoost(Cell turboCell) {
+		synchronized(turboBoostsLock) {
+			for(int i = 0; i < NR_TURBO_BOOSTS; i++) {
+				if(turbo_boosts[i] != null && turbo_boosts[i].equals(turboCell)) {
+					turbo_boosts[i] = null;
+					break;
+				}
+			}
+		}
+	}
+
+	public static boolean hasTurboBoostAt(Cell cell) {
+		synchronized(turboBoostsLock) {
+			for(int i = 0; i < NR_TURBO_BOOSTS; i++) {
+				if(turbo_boosts[i] != null && turbo_boosts[i].equals(cell)) {
+					return true;
+				}
+			}
+			return false;
+		}
+	}
+
+			public static boolean tryMoveSnake(Snake snake, Cell newCell) {
+				synchronized(collisionLock) {
+					// Verificar si la celda está disponible
+					if(newCell.isFull()) {
+						return false; // Movimiento inválido
+					}
+
+					// Reservar la celda
+					newCell.setFull(true);
+					snake.getHead().setFull(false);
+
+					// Actualizar cuerpo de la serpiente
+					synchronized(snake.getBodyLock()) {
+						snake.getBody().push(newCell);
+						if(snake.getGrowth() <= 0) {
+							Cell tail = snake.getBody().removeLast();
+							tail.setFull(false);
+						}
+					}
+					return true;
+				}
+			}
+
+			// Método para verificar disponibilidad de celda
+			public static boolean isCellAvailable(int x, int y) {
+				synchronized(collisionLock) {
+					if(x < 0 || x >= GridSize.GRID_WIDTH ||
+							y < 0 || y >= GridSize.GRID_HEIGHT) {
+						return false;
+					}
+					return !gameboard[x][y].isFull();
+				}
+			}
+
+			// Método para crecimiento seguro
+			public static void growSnake(Snake snake) {
+				synchronized(snake.getBodyLock()) {
+					Cell newHead = snake.calculateNextCell();
+					if(newHead != null && !newHead.isFull()) {
+						newHead.setFull(true);
+						snake.getBody().push(newHead);
+						snake.growing--;
+					}
+				}
+			}
+
 	@Override
 	public void update(Observable arg0, Object arg1) {
 		repaint();
 	}
+
+			// Método para actualización atómica de múltiples celdas
+			public static void updateCells(Cell... cells) {
+				synchronized(collisionLock) {
+					// Ordenar celdas para prevenir deadlocks
+					Arrays.sort(cells, Comparator.comparingInt(Cell::hashCode));
+
+					// Bloquear todas las celdas en orden
+					for(Cell cell : cells) {
+						synchronized(cell) {
+							// Realizar operaciones
+						}
+					}
+				}
+			}
+
+			// Ejemplo de uso cuando una serpiente crece
+			public static void snakeGrow(Snake snake) {
+				Cell head = snake.getHead();
+				Cell newHead = snake.calculateNextCell();
+
+				updateCells(head, newHead);
+
+				synchronized(snake.getBodyLock()) {
+					snake.getBody().push(newHead);
+					newHead.setFull(true);
+				}
+			}
+
 }
