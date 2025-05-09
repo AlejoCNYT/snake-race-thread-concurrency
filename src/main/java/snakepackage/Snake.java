@@ -14,8 +14,8 @@ public class Snake extends Observable implements Runnable {
     private Cell newCell;
     private final LinkedList<Cell> snakeBody = new LinkedList<>();
     private Cell start = null;
-    private long lastMoveTime;
-    private static final long MAX_WAIT_TIME = 3000; // 3 segundos
+    private final Object bodyLock = new Object(); // Solo para snakeBody
+
     private volatile boolean snakeEnd = false;
 
     private volatile int direction = Direction.NO_DIRECTION;
@@ -26,8 +26,6 @@ public class Snake extends Observable implements Runnable {
     private boolean isSelected = false;
     volatile int growing = 0;
     public boolean goal = false;
-
-    private final Object bodyLock = new Object(); // Solo para snakeBody
 
     private final Object lock = new Object();
 
@@ -51,31 +49,31 @@ public class Snake extends Observable implements Runnable {
 
     @Override
     public void run() {
-        while(!snakeEnd) {
+        while (!snakeEnd) {
             try {
-                if(System.currentTimeMillis() - lastMoveTime > MAX_WAIT_TIME) {
-                    forceMove();
-                }
-
-                // Reemplazar moveSnake() por snakeCalc() que ya contiene toda la lógica
                 snakeCalc();
 
-                lastMoveTime = System.currentTimeMillis();
-                Thread.sleep(getDelay());
-
-                // Notificar cambios para redibujar
                 setChanged();
                 notifyObservers();
 
+                if (hasTurbo) {
+                    Thread.sleep(500 / 3);
+                } else {
+                    Thread.sleep(500);
+                }
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
                 snakeEnd = true;
+            } catch (Exception e) {
+                System.err.println("[" + idt + "] Error in snake thread: " + e.getMessage());
+                snakeEnd = true;
             }
         }
-    }
 
-// Eliminar moveSnake() y usar solo snakeCalc() que ya existe
-// Mantener todos los demás métodos auxiliares
+        if (head != null) {
+            fixDirection(head);
+        }
+    }
 
     private void snakeCalc() {
         Cell currentHead;
@@ -354,21 +352,15 @@ public class Snake extends Observable implements Runnable {
         }
     }
 
-    public synchronized LinkedList<Cell> getBody() {
-        synchronized (bodyLock)
-        {
+    // Modificar métodos para usar el lock mínimo necesario:
+    public LinkedList<Cell> getBody() {
+        synchronized(bodyLock) {
             return new LinkedList<>(this.snakeBody);
         }
     }
 
     public boolean isSelected() {
         return isSelected;
-    }
-
-    private void addToBody(Cell cell) {
-        synchronized(bodyLock) {
-            snakeBody.push(cell);
-        }
     }
 
     public synchronized void setSelected(boolean isSelected) {
@@ -383,6 +375,32 @@ public class Snake extends Observable implements Runnable {
         this.snakeEnd = end;
     }
 
+    public synchronized Cell getHead() {
+        return snakeBody.peekFirst();
+    }
+
+    private void addToBody(Cell cell) {
+        synchronized(bodyLock) {
+            snakeBody.push(cell);
+        }
+    }
+
+    private void moveToCell(Cell newCell) throws InterruptedException {
+        newCell.awaitUntilFree(); // Espera pasiva
+
+        synchronized(Board.cellLock) { // Lock a nivel de Board para acceso global
+            if(newCell.isFull()) {
+                handleCollision();
+                return;
+            }
+
+            synchronized(bodyLock) {
+                snakeBody.push(newCell);
+                newCell.setFull(true);
+            }
+        }
+    }
+
     // En Snake.java
     public synchronized int getSize() {
         return snakeBody.size();
@@ -390,23 +408,6 @@ public class Snake extends Observable implements Runnable {
 
     public synchronized boolean isAlive() {
         return !snakeEnd;
-    }
-
-    public synchronized Cell getHead() {
-        return snakeBody.peekFirst();
-    }
-
-    private void moveSnake() {
-        try {
-            Cell nextCell = calculateNextCell();
-            nextCell.waitUntilFree(); // Espera pasiva
-
-            if(!Board.tryMoveSnake(this, nextCell)) {
-                handleCollision();
-            }
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-        }
     }
 
     // Método para movimiento forzado cuando hay inanición

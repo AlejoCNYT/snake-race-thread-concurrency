@@ -155,6 +155,9 @@ public class Cell
 	 */
 	public synchronized void setFull(boolean full) {
 		this.full = full;
+		if(!full) {
+			notifyAll(); // Notifica a todos los que esperan
+		}
 	}
 
 	/* 
@@ -195,19 +198,18 @@ public class Cell
 		this.barrier = barrier;
 	}
 
-	public synchronized void waitUntilFree() throws InterruptedException {
-		long waitTime = 100; // 100 ms de timeout
-		long totalWait = 0;
-		long maxWait = 3000; // Máximo 3 segundos
-
-		while(this.full && totalWait < maxWait) {
-			wait(waitTime);
-			totalWait += waitTime;
-		}
-
-		if(totalWait >= maxWait && this.full) {
-			throw new InterruptedException("Timeout waiting for cell");
+	public synchronized void awaitUntilFree() throws InterruptedException {
+		while(this.full) {
+			wait(); // Espera pasiva en lugar de activa
 		}
 	}
+
+	// Método para espera pasiva
+	public synchronized void waitUntilFree() throws InterruptedException {
+		while(this.full) {
+			wait(); // Libera el lock y espera
+		}
+	}
+
 
 }

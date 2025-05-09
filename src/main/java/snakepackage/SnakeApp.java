@@ -23,10 +23,10 @@ import static snakepackage.Board.result;
 public class SnakeApp
 {
     private static final Object gameStateLock = new Object();
-    private static final Object snakesLock = new Object();
     private static SnakeApp app;
     public static final int MAX_THREADS = 8;
     static Snake[] snakes = new Snake[MAX_THREADS];
+    private static final Object snakesLock = new Object();
     private static final Cell[] spawn =
             {
         new Cell(1, (GridSize.GRID_HEIGHT / 2) / 2),
@@ -66,8 +66,6 @@ public class SnakeApp
         frame.add(actionsBPabel,BorderLayout.SOUTH);
 
     }
-
-
 
     public static void main(String[] args)
     {
@@ -111,6 +109,23 @@ public class SnakeApp
             System.out.println("["+i+"] :"+thread[i].getState());
         }
 
+    }
+
+    public static SnakeApp getApp()
+    {
+        return app;
+    }
+
+    public static Snake getSnake(int id) {
+        synchronized(snakesLock) {
+            return snakes[id];
+        }
+    }
+
+    public static void updateSnakeStatus(int id, boolean status) {
+        synchronized(snakesLock) {
+            snakes[id].setSnakeEnd(status);
+        }
     }
 
     public static boolean checkGameOver() {
@@ -187,22 +202,4 @@ public class SnakeApp
             return false;
         }
     }
-
-    public static SnakeApp getApp()
-    {
-        return app;
-    }
-
-    public static Snake getSnake(int id) {
-        synchronized(snakesLock) {
-            return snakes[id];
-        }
-    }
-
-    public static void updateSnakeStatus(int id, boolean status) {
-        synchronized(snakesLock) {
-            snakes[id].setSnakeEnd(status);
-        }
-    }
-
 }
